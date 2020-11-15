@@ -11,21 +11,28 @@ app = Flask(__name__)
 setup_db(app)
 CORS(app)
 
+
 '''
 @TODO uncomment the following line to initialize the datbase
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
+
 # db_drop_and_create_all()
 
-## ROUTES
+
+
+# --------------------------------------------------------------------------------------------------------
+## Routes
+# --------------------------------------------------------------------------------------------------------
 
 @app.route('/drinks', methods=['GET'])
 def get_drinks():
+
     available_drinks = Drink.query.all()
     drink_short = [drink.short() for drink in available_drinks]
-    print('d', drink_short)
 
+    #return 404 error if no drinks are found
     if len(drink_short) == 0:
         abort(404)
     try: 
@@ -36,8 +43,6 @@ def get_drinks():
     except: 
         abort(404)
     
-
-
 
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
@@ -57,8 +62,6 @@ def get_drinks_detail(token):
         abort(404)
 
 
-
-
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
 def create_new_drink(payload):
@@ -66,18 +69,13 @@ def create_new_drink(payload):
     title = body.get('title', None)
     recipe = body.get('recipe', None)
 
-    print('title', title)
-    print('recipte', recipe)
-
     if not title or not recipe:
         return jsonify({
             "success": False,
             "error": 422,
             "message": "Title and recipe are required"
         }), 422
-
     try:
-        
         drink = Drink(title=title, recipe=json.dumps(recipe))
         drink.insert()
 
@@ -85,7 +83,7 @@ def create_new_drink(payload):
             'success': True,
             'drinks': [drink.long()]
         }), 200
-
+        
     except:
         abort(422)
 
@@ -93,24 +91,14 @@ def create_new_drink(payload):
 @app.route('/drinks/<int:drink_id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 def edit_drink(payload, drink_id):
-    print('in patch')
     if not drink_id: 
         abort(404)
 
     body = request.get_json()
-    print('body is', body)
     title = body.get('title', None)
     recipe = body.get('recipe', None)
-    print('recipe is', recipe)
-    print('title is', title)
-    print('id is', drink_id)
 
-    # if not title or not recipe:
-    #     return jsonify({
-    #         "success": False,
-    #         "error": 422,
-    #         "message": "Title and recipe are required"
-    #     }), 422
+  
     drink = Drink.query.filter(Drink.id==drink_id).one_or_none()
     if drink is None: 
         return jsonify({
@@ -121,12 +109,9 @@ def edit_drink(payload, drink_id):
 
     try: 
         if title: 
-            print('in title', title)
             drink.title = title 
         if recipe:
             drink.recipe = json.dumps(recipe)
-        print('ttttt')
-        print('drink now', drink)
         drink.update()
         return jsonify({
             'success': True,
